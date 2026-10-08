@@ -1,6 +1,5 @@
-/* The outer stage is fully transparent - it only provides padding so the
-   card's border, radius and shadow are never clipped by the window edge
-   (clipping at the viewport edge is what produced the uneven white border). */
+/* Transparent stage: padding keeps the card's border/shadow off the window
+   edge, which otherwise clips it into an uneven light fringe. */
 .settings-container {
   width: 100vw;
   height: 100vh;
@@ -9,8 +8,7 @@
   background: transparent;
 }
 
-/* The visible panel. All material styling lives here, inset from the
-   window edge. */
+/* The visible panel. */
 .settings-card {
   display: flex;
   flex-direction: column;
@@ -26,7 +24,7 @@
   box-shadow: var(--shadow-palette), var(--inner-highlight);
   overflow: hidden;
   box-sizing: border-box;
-  /* Opacity only - see the palette note in App.css about backdrop blur. */
+  /* Opacity only - moving a blurred panel re-samples its backdrop every frame. */
   animation: settingsIn 170ms ease-out both;
 }
 

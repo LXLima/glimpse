@@ -27,10 +27,8 @@ static SHOWN_AT: Mutex<Option<Instant>> = Mutex::new(None);
 /// Set while the settings window is recording a new hotkey; the current
 /// shortcut is unregistered so the recorder can actually see the key presses.
 static HOTKEY_PAUSED: AtomicBool = AtomicBool::new(false);
-/// Serializes pause/unpause/save registration work. Rapid record-stop-record
-/// cycles send overlapping IPC commands; without this, an unpause that runs
-/// after a second pause would re-register the live hotkey mid-recording and
-/// the OS would swallow the very keys being recorded.
+/// Serializes pause/unpause/save registration. Two of those racing leaves the
+/// old hotkey re-registered mid-recording, so the OS keeps eating the keys.
 static HOTKEY_OP_LOCK: Mutex<()> = Mutex::new(());
 
 const DEFAULT_ENGINE: &str = "google";
@@ -399,8 +397,8 @@ fn save_full_config(app: tauri::AppHandle, config: FullConfig) -> Result<(), Str
         set_autostart(config.startup);
     }
 
-    // 4. Save to disk (only after the hotkey succeeded, so config.json always
-    //    describes a hotkey that is actually registered).
+    // 4. Save to disk - after the hotkey succeeded, so config.json always
+    //    points at a hotkey that is actually live.
     if let Ok(config_dir) = app.path().app_config_dir() {
         let _ = std::fs::create_dir_all(&config_dir);
         let config_path = config_dir.join("config.json");
@@ -432,10 +430,8 @@ fn validate_hotkey(hotkey: String) -> Result<(), String> {
 /// it otherwise and recording would hang forever).
 #[tauri::command]
 fn set_hotkey_paused(app: tauri::AppHandle, paused: bool) -> Result<(), String> {
-    // Serialize against other pause/unpause/save work so back-to-back
-    // recordings always converge to the requested end state. If the mutex
-    // is poisoned we proceed anyway - a stuck recorder is worse than a
-    // theoretical race.
+    // Serializes pause/unpause/save. Poisoned mutex keeps going - a stuck
+    // recorder is worse than a race.
     let _guard = HOTKEY_OP_LOCK.lock().unwrap_or_else(|p| p.into_inner());
 
     if paused {
@@ -445,9 +441,8 @@ fn set_hotkey_paused(app: tauri::AppHandle, paused: bool) -> Result<(), String> 
     }
 
     HOTKEY_PAUSED.store(false, Ordering::SeqCst);
-    // Restore deterministically: release anything still held, then bind
-    // exactly what is on disk. Never trust REGISTERED_SHORTCUT here - a
-    // previously raced cycle could have left it out of sync with the OS.
+    // Drop whatever is registered and rebind from disk - an earlier race can
+    // leave REGISTERED_SHORTCUT disagreeing with what the OS actually holds.
     unregister_registered(&app);
     let cfg = get_full_config(app.clone());
     let shortcut = parse_shortcut(&cfg.hotkey)?;

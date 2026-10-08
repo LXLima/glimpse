@@ -132,11 +132,9 @@ body {
   flex-direction: column;
   overflow: hidden;
   transition: border-color var(--dur-med) ease, box-shadow var(--dur-med) ease;
-  /* No entrance animation on purpose. The window appears with its content
-     fully formed (state persists while hidden), so there is no old-frame /
-     first-frame flash and nothing that can stutter - an instant appear is
-     the smoothest possible open. Motion lives only in state changes that
-     happen after the window is already visible (expand, hover, selection). */
+  /* No entrance animation: the window is already populated while hidden, so
+     an appear is instant and there is no old-frame flash. Motion only plays
+     after the window is visible (expand, hover, selection). */
 }
 
 /* Focus ring for the whole palette so it reads as "ready for typing" */
@@ -340,8 +338,8 @@ body {
   gap: 15px;
   border-radius: var(--radius-md);
   transition: background-color var(--dur-fast) ease, transform var(--dur-fast) ease;
-  /* No entrance animation here on purpose: these nodes mount on every
-     keystroke, so a staggered cascade would replay while typing. */
+  /* Rows re-mount on every keystroke, so an entrance cascade would replay
+     while typing. */
 }
 
 /* Accent pill that grows in on the selected row */

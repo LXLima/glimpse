@@ -125,10 +125,9 @@ export default function Settings() {
 
   // ---------------------------------------------------------- recording ----
   const startRecording = useCallback(() => {
-    // Drop focus from whatever was clicked: a focused Record/Reset button
-    // would turn Space/Enter into a button press mid-recording (re-cancelling
-    // or re-starting it), which made repeat recordings feel broken.
-    // Keystrokes are captured at window level, so focus is not needed.
+    // Clear focus from the Record/Reset buttons: a focused button turns
+    // Space/Enter into a second click mid-recording. Keystrokes are captured
+    // at window level, so focus is not needed.
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }

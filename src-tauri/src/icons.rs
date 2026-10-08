@@ -17,19 +17,15 @@ use std::io::Cursor;
 use base64::{Engine as _, engine::general_purpose};
 use image::{RgbaImage, ImageFormat, imageops::FilterType};
 
-/// Native icon size we extract. SHIL_EXTRALARGE is a true 48x48 from the
-/// system image list - the old code asked for SHGFI_LARGEICON (32x32) and then
-/// read it into a 48x48 buffer, which produced tiny/garbled shortcut icons.
+/// SHIL_EXTRALARGE = 48x48. SHGFI_LARGEICON is only 32x32, and reading that
+/// into a 48x48 buffer (as this used to) reads past the bitmap.
 const ICON_PX: i32 = 48;
-/// Longest side of the glyph after margin trimming - fills the tile while
-/// leaving a hair of breathing room so rounded art never clips.
+/// Fit the glyph to this after trimming, so it fills the tile.
 const GLYPH_PX: u32 = 44;
 
-/// Crops transparent margins so the glyph fills the canvas. Many shell icons
-/// carry baked-in padding (or center smaller art on the tile) - without this
-/// the art floats small inside its square no matter how large it is drawn.
-/// The content is fitted to GLYPH_PX on its longest side and centered on a
-/// transparent 48x48 tile.
+/// Shell icons often ship with baked-in padding, which makes them render
+/// small even at full size. Trim the transparent margin and scale the glyph
+/// up to GLYPH_PX, centered on a transparent tile.
 fn fill_canvas(img: RgbaImage) -> RgbaImage {
     let (w, h) = (img.width(), img.height());
     let (mut min_x, mut min_y) = (w, h);
@@ -45,7 +41,7 @@ fn fill_canvas(img: RgbaImage) -> RgbaImage {
     if max_x < min_x || max_y < min_y {
         return img; // fully transparent - nothing to fill
     }
-    // Small breathing room, clamped to the canvas.
+    // Keep a 2px margin.
     let min_x = min_x.saturating_sub(2);
     let min_y = min_y.saturating_sub(2);
     let max_x = (max_x + 2).min(w - 1);
@@ -72,14 +68,14 @@ fn fill_canvas(img: RgbaImage) -> RgbaImage {
 }
 
 fn com_guard() -> bool {
-    // The image-list APIs want COM on the calling thread; the indexer runs on
-    // a plain background thread. S_FALSE just means "already initialized".
+    // The image list needs COM on the calling thread; the indexer's scan runs
+    // on a plain thread. False-to-true is "already initialized".
     unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED).is_ok() }
 }
 
-/// Renders an HICON into a 48x48 RGBA PNG (base64). DrawIconEx composites the
-/// color + mask with real per-pixel alpha - unlike reading hbmColor directly,
-/// which loses alpha and clips at the source bitmap size.
+/// Draws an HICON into a 48x48 PNG (base64). DrawIconEx composites color and
+/// mask, so alpha is real - reading hbmColor directly loses it and stops at
+/// the source bitmap's size.
 fn hicon_to_base64(hicon: HICON) -> Option<String> {
     unsafe {
         let hdc_screen = GetDC(HWND::default());
@@ -155,8 +151,8 @@ fn hicon_to_base64(hicon: HICON) -> Option<String> {
     }
 }
 
-/// System image-list icon index for a path. Works for .exe and .lnk
-/// (the shell resolves shortcuts to their target's icon).
+/// Image-list index for a path. Handles both .exe and .lnk (the shell
+/// resolves shortcuts to the target's icon).
 fn sysicon_index(path: &str) -> Option<i32> {
     unsafe {
         let mut shfi = SHFILEINFOW::default();
@@ -177,8 +173,8 @@ fn sysicon_index(path: &str) -> Option<i32> {
 
 fn extralarge_icon(index: i32) -> Option<HICON> {
     unsafe {
-        // Generic form: asks shell32 for the EXTRALARGE (48x48) image list
-        // as a refcounted IImageList - no manual AddRef/Release needed.
+        // SHGetImageList is refcounted, so this window-list call needs no
+        // manual AddRef/Release.
         let list: IImageList = SHGetImageList(SHIL_EXTRALARGE as i32).ok()?;
         let hicon = list.GetIcon(index, ILD_TRANSPARENT.0 as u32).ok()?;
         if hicon.is_invalid() {
@@ -188,8 +184,7 @@ fn extralarge_icon(index: i32) -> Option<HICON> {
     }
 }
 
-/// Legacy fallback: 32x32 icon upscaled into the 48x48 canvas. Only used when
-/// the image-list path fails.
+/// Fallback for when the image list fails: 32x32, upscaled into the tile.
 fn fallback_icon(path: &str) -> Option<HICON> {
     unsafe {
         let mut shfi = SHFILEINFOW::default();
@@ -247,9 +242,9 @@ pub fn extract_icon_as_base64(path: &str) -> Option<String> {
 mod tests {
     use super::*;
 
-    /// Guards the "tiny/garbled shortcut icon" regression class: a real
-    /// system binary must yield a true 48x48 PNG with meaningful alpha
-    /// coverage in its central region (not a 16x16 sprite in a corner).
+    /// The old 32x32-into-48x48 bug produced a small sprite sitting in the
+    /// corner of the tile with a broken alpha channel. Assert the real size
+    /// and that the centre of the glyph actually has coverage.
     #[test]
     fn test_extract_icon_is_true_size_with_alpha() {
         let base64 = extract_icon_as_base64(r"C:\Windows\System32\notepad.exe");
@@ -261,7 +256,7 @@ mod tests {
         let img = image::load_from_memory(&png).expect("PNG must decode");
         assert_eq!((img.width(), img.height()), (48, 48));
         let rgba = img.to_rgba8();
-        // Central half must be substantially covered (alpha > 128).
+        // Alpha > 128 across the centre half.
         let (w, h) = (rgba.width(), rgba.height());
         let mut covered = 0u32;
         let mut total = 0u32;
@@ -280,9 +275,7 @@ mod tests {
         );
     }
 
-    /// A small glyph centered on a large transparent canvas must come out
-    /// filling the tile - this is what makes shortcut icons look full-size
-    /// instead of floating small inside their square.
+    /// A padded glyph must be trimmed and scaled out to fill the tile.
     #[test]
     fn test_fill_canvas_expands_small_glyph() {
         let mut img = RgbaImage::from_pixel(48, 48, image::Rgba([0, 0, 0, 0]));

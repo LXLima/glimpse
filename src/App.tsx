@@ -121,8 +121,7 @@ export default function App() {
   }, [focusInput]);
 
   const handleWindowShown = useCallback(() => {
-    // Showing is focus-only. The panel carries no open animation at all, so
-    // there is nothing that can flash or restart mid-flight.
+    // Showing is focus-only. There is no open animation left to restart.
     focusInput(true);
     refocusLater();
   }, [focusInput, refocusLater]);
@@ -220,8 +219,7 @@ export default function App() {
     const trimmed = query.trim();
 
     if (!trimmed) {
-      // Empty query: a clean idle bar. (Clipboard history used to live here;
-      // the feature was removed, so there is nothing to show.)
+      // Empty query: idle bar.
       setLoading(false);
       setResults([]);
       setSelected(0);
