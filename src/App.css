@@ -1,0 +1,585 @@
+:root {
+  /* ------------------------------------------------------------------
+     Design tokens - Windows 11 / Fluent inspired "Obsidian" material
+     ------------------------------------------------------------------ */
+
+  /* Surfaces */
+  --bg-mica-dark: rgba(18, 18, 20, 0.92);
+  --bg-mica-light: #ffffff; /* Opaque white for light mode */
+  --bg-mica: var(--bg-mica-dark);
+
+  /* Text */
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.52);
+  --placeholder: rgba(255, 255, 255, 0.32);
+
+  /* Accents & lines */
+  --accent: #3b9eff;
+  --text-on-accent: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --hover: rgba(255, 255, 255, 0.07);
+  --icon-tile: rgba(255, 255, 255, 0.06);
+  --icon-tile-hover: rgba(255, 255, 255, 0.11);
+
+  /* Footer */
+  --footer-bg: rgba(0, 0, 0, 0.28);
+  --footer-border: rgba(255, 255, 255, 0.06);
+  --footer-text: rgba(255, 255, 255, 0.44);
+  --hint-badge: rgba(255, 255, 255, 0.85);
+  --hint-badge-bg: rgba(255, 255, 255, 0.1);
+  --hint-label: rgba(255, 255, 255, 0.45);
+
+  /* Elevation */
+  --shadow-palette: 0 28px 64px -18px rgba(0, 0, 0, 0.72), 0 6px 20px rgba(0, 0, 0, 0.4);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --scroll-thumb: rgba(255, 255, 255, 0.18);
+  --scroll-thumb-hover: rgba(255, 255, 255, 0.32);
+
+  /* Radii */
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 8px;
+
+  /* Motion - a soft spring for entrances, an emphasised curve for layout */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 130ms;
+  --dur-med: 240ms;
+  --dur-slow: 340ms;
+
+  font-family: "Segoe UI Variable Text", "Segoe UI Variable Display", "Segoe UI",
+    system-ui, -apple-system, sans-serif;
+}
+
+[data-theme='light'] {
+  --bg-mica: var(--bg-mica-light);
+  --text-primary: #1b1b1f;
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --placeholder: rgba(0, 0, 0, 0.34);
+  --border: rgba(0, 0, 0, 0.1);
+  --hover: rgba(0, 0, 0, 0.05);
+  --icon-tile: rgba(0, 0, 0, 0.05);
+  --icon-tile-hover: rgba(0, 0, 0, 0.09);
+  --footer-bg: #f4f4f6;
+  --footer-border: rgba(0, 0, 0, 0.06);
+  --footer-text: rgba(0, 0, 0, 0.55);
+  --hint-badge: #1b1b1f;
+  --hint-badge-bg: rgba(0, 0, 0, 0.06);
+  --hint-label: rgba(0, 0, 0, 0.55);
+  --text-on-accent: #ffffff;
+  --shadow-palette: 0 28px 64px -22px rgba(0, 0, 0, 0.28), 0 6px 20px rgba(0, 0, 0, 0.12);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --scroll-thumb: rgba(0, 0, 0, 0.2);
+  --scroll-thumb-hover: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme='dark'] {
+  --bg-mica: var(--bg-mica-dark);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The palette floats centered inside the transparent window with room to
+   spare on every side, so its border and shadow are never clipped by the
+   window edge (clipped shadows read as uneven light borders). */
+#root:has(.container) {
+  align-items: center;
+  justify-content: center;
+  padding: 14px 14px 18px;
+}
+
+/* Settings brings its own stage padding. */
+#root:has(.settings-container) {
+  padding: 0;
+}
+
+/* =====================================================================
+   Palette
+   ===================================================================== */
+
+.container {
+  position: relative;
+  width: min(652px, 100%);
+  background: var(--bg-mica);
+  backdrop-filter: blur(44px) saturate(170%);
+  -webkit-backdrop-filter: blur(44px) saturate(170%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-palette), var(--inner-highlight);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color var(--dur-med) ease, box-shadow var(--dur-med) ease;
+  /* No entrance animation on purpose. The window appears with its content
+     fully formed (state persists while hidden), so there is no old-frame /
+     first-frame flash and nothing that can stutter - an instant appear is
+     the smoothest possible open. Motion lives only in state changes that
+     happen after the window is already visible (expand, hover, selection). */
+}
+
+/* Focus ring for the whole palette so it reads as "ready for typing" */
+.container:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+/* Simple fade used for empty states - no translate, no stagger. */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------- header */
+
+.search-header {
+  height: 64px;
+  padding: 0 18px 0 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.search-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--accent);
+  transition: color var(--dur-fast) ease, opacity var(--dur-fast) ease;
+}
+
+.search-icon.spinning {
+  animation: searchPulse 900ms ease-in-out infinite;
+}
+
+@keyframes searchPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  caret-color: var(--accent);
+}
+
+.search-input::placeholder {
+  color: var(--placeholder);
+}
+
+.search-input::selection {
+  background: rgba(128, 128, 128, 0.45);
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* -------------------------------------------------------------- controls */
+
+.theme-toggle {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease,
+    transform 320ms var(--ease-spring);
+}
+
+.theme-toggle:hover {
+  background: var(--hover);
+  color: var(--text-primary);
+  transform: rotate(90deg); /* the gear actually turns */
+}
+
+.theme-toggle:active {
+  transform: rotate(90deg) scale(0.9);
+}
+
+.theme-toggle:focus-visible,
+.action-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* =====================================================================
+   Results - grid-template-rows gives a layout-accurate expand/collapse
+   without guessing pixel heights.
+   ===================================================================== */
+
+.results-region {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms var(--ease-emphasized);
+}
+
+.container.expanded .results-region {
+  grid-template-rows: 1fr;
+}
+
+.results-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.results-list {
+  max-height: calc(100vh - 212px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 0 10px;
+  opacity: 0;
+  /* One motion only (the grid-rows expand below carries the movement) -
+     fading + sliding the list at the same time looked broken. The delay lets
+     the space open first so content fades into place. */
+  transition: opacity 200ms ease 100ms;
+}
+
+.container.expanded .results-list {
+  opacity: 1;
+}
+
+/* Modern scrollbar */
+.results-list {
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+
+.results-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.results-list::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 10px 0;
+}
+
+.results-list::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.results-list::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+  background-clip: padding-box;
+}
+
+/* ---------------------------------------------------------- group titles */
+
+.result-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+}
+
+.result-group-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ------------------------------------------------------------- result row */
+
+.result-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 9px 22px;
+  cursor: pointer;
+  gap: 15px;
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur-fast) ease, transform var(--dur-fast) ease;
+  /* No entrance animation here on purpose: these nodes mount on every
+     keystroke, so a staggered cascade would replay while typing. */
+}
+
+/* Accent pill that grows in on the selected row */
+.result-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+  transform: translateY(-50%);
+  transition: height 220ms var(--ease-spring);
+}
+
+.result-item:hover {
+  background: var(--hover);
+}
+
+.result-item.selected {
+  background: var(--hover);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.result-item.selected::before {
+  height: 62%;
+}
+
+.result-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--icon-tile);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: background var(--dur-fast) ease, transform 260ms var(--ease-spring);
+}
+
+.result-item.selected .result-icon {
+  background: var(--icon-tile-hover);
+  transform: scale(1.05);
+}
+
+.result-icon img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-name {
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------- action & status */
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 160ms ease, transform 220ms var(--ease-spring),
+    background var(--dur-fast) ease, color var(--dur-fast) ease;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.result-item:hover .action-btn,
+.result-item.selected .action-btn {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.action-btn:hover {
+  background: var(--icon-tile-hover);
+  color: var(--text-primary);
+}
+
+.copied-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-on-accent);
+  background: var(--accent);
+  padding: 3px 10px;
+  border-radius: 99px;
+  margin-right: 6px;
+  animation: popIn 240ms var(--ease-spring) both;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---------------------------------------------------------- empty status */
+
+.empty-state {
+  padding: 30px 24px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  animation: fadeIn 160ms ease both;
+}
+
+/* ----------------------------------------------------------------- toast */
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: calc(100% - 48px);
+  padding: 9px 16px;
+  border-radius: 99px;
+  background: rgba(214, 62, 62, 0.95);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.6);
+  animation: toastIn 260ms var(--ease-spring) both;
+  pointer-events: none;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* =====================================================================
+   Footer
+   ===================================================================== */
+
+.footer {
+  height: 0;
+  overflow: hidden;
+  padding: 0 22px;
+  background: var(--footer-bg);
+  border-top: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--footer-text);
+  opacity: 0;
+  transition: height 300ms var(--ease-emphasized),
+    opacity 200ms ease 100ms, border-color var(--dur-med) ease;
+}
+
+.container.expanded .footer {
+  height: 42px;
+  opacity: 1;
+  border-top-color: var(--footer-border);
+}
+
+.footer-keys {
+  display: flex;
+  gap: 14px;
+}
+
+.footer-item {
+  display: flex;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.key-hint {
+  background: var(--hint-badge-bg);
+  color: var(--hint-badge);
+  padding: 2px 7px;
+  border-radius: 5px;
+  margin-right: 6px;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.hint-label {
+  color: var(--hint-label);
+}
+
+.footer-brand {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--footer-text);
+  white-space: nowrap;
+}
+
+/* =====================================================================
+   Accessibility - honour reduced motion preferences
+   ===================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
