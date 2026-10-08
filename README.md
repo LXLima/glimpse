@@ -104,8 +104,6 @@ glimpse/
 │   ├── main.tsx              Entry point (routes to App or Settings)
 │   ├── utils/theme.ts        Loads themes into CSS variables
 │   └── themes/               JSON theme files
-├── scripts/
-│   └── make-icon.py          Generates the app icons
 ├── src-tauri/
 │   ├── src/
 │   │   ├── main.rs           Setup, hotkeys, tray, autostart, config
