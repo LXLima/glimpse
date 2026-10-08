@@ -15,8 +15,8 @@ A small search palette for Windows 11.
 
 <div align="center" style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
 
-<img src="demo/photos/newui.png" width="65%" alt="Glimpse palette" />
-<img src="demo/photos/settings-ui.png" width="30%" alt="Glimpse settings" />
+<img src="demo/photos/ui.png" width="65%" alt="Glimpse palette" />
+<img src="demo/photos/settings.png" width="30%" alt="Glimpse settings" />
 
 </div>
 
