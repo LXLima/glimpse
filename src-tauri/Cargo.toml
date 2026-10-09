@@ -3,7 +3,7 @@ name = "glimpse"
 version = "1.0.0"
 description = "Glimpse - a fast, minimal, non-admin search palette for Windows, built with Tauri 2, Rust, and React."
 authors = ["Pranav Raizada"]
-license = "MIT"
+license = "CC-BY-NC-SA-4.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
