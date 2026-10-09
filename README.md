@@ -91,7 +91,6 @@ Results are grouped as Apps, Settings, Files and Web.
 - **Search engine:** Google, Bing, DuckDuckGo or Brave.
 - **Hotkey:** click Record, then press any combo using Ctrl, Alt or Win.
 - **Autostart:** toggle it off if you don't want it.
-- **Icon:** `python scripts/make-icon.py` regenerates the whole icon set (needs Pillow).
 
 ## How it's put together
 
@@ -135,7 +134,6 @@ Rough numbers from a mid-range machine on Windows 11:
 npm run tauri dev                                  # dev mode with hot reload
 npm run tauri build                                # exe + NSIS + MSI
 cargo test --manifest-path src-tauri/Cargo.toml    # backend tests
-python scripts/make-icon.py                        # regenerate icons
 ```
 
 Build from a path with no spaces. With the GNU toolchain, Tauri's `windres` step breaks on spaced paths. A directory junction works as a workaround.
