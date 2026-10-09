@@ -2,7 +2,7 @@
   "name": "glimpse",
   "private": true,
   "author": "Pranav Raizada",
-  "license": "CC-BY-NC-SA-4.0",
+  "license": "MIT",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
